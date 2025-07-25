@@ -3,10 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
+    <title>Galeria de Animações</title>
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-    <h1>Hello World!</h1>
-    <p>Bem-vindo ao meu site no GitHub Pages!</p>
+    <header>
+        <h1>Galeria de Animações</h1>
+        <p>Animações interativas em Canvas</p>
+    </header>
+    
+    <main>
+        <div class="animation-container">
+            <canvas id="animation-canvas"></canvas>
+            <div class="animation-info">
+                <h2 id="animation-title">Carregando...</h2>
+                <p id="animation-description"></p>
+            </div>
+        </div>
+        
+        <nav class="animation-nav">
+            <button id="prev-btn" disabled>← Anterior</button>
+            <span id="animation-counter">1 / 1</span>
+            <button id="next-btn" disabled>Próxima →</button>
+        </nav>
+    </main>
+    
+    <script type="module" src="js/gallery.js"></script>
 </body>
 </html>
