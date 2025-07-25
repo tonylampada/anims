@@ -1,4 +1,4 @@
-import Animation from '../../js/animation.js';
+import Animation from '/anims/js/animation.js';
 
 class ParticlesAnimation extends Animation {
     constructor() {

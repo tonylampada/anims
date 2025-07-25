@@ -3,7 +3,7 @@
 class Gallery {
     constructor() {
         this.animations = [
-            { name: 'particles', path: './animations/particles/index.js' }
+            { name: 'particles', path: '/anims/animations/particles/index.js' }
         ];
         this.currentIndex = 0;
         this.currentAnimation = null;
