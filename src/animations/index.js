@@ -7,6 +7,7 @@ import OceanWavesAnimation from './ocean-waves/index.js';
 import AuroraAnimation from './aurora/index.js';
 import MandalaAnimation from './mandala/index.js';
 import BubbleTubeAnimation from './bubble-tube/index.js';
+import SpiralGalaxyAnimation from './spiral-galaxy/index.js';
 
 export const animations = [
     ParticlesAnimation,
@@ -16,7 +17,8 @@ export const animations = [
     OceanWavesAnimation,
     AuroraAnimation,
     MandalaAnimation,
-    BubbleTubeAnimation
+    BubbleTubeAnimation,
+    SpiralGalaxyAnimation
 ];
 
 // Para facilitar adicionar novas animações no futuro
