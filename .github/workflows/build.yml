@@ -22,6 +22,11 @@ jobs:
     - name: Build project
       run: npm run build
       
+    - name: Add cache busting version
+      run: |
+        COMMIT_HASH=$(git rev-parse --short HEAD)
+        sed -i "s/bundle\.js?v=\${Date\.now()}/bundle.js?v=$COMMIT_HASH/g" index.html
+      
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
