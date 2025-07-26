@@ -2272,8 +2272,8 @@
                 if (star.size > 1.5) {
                     // Larger stars get a subtle glow
                     const glowGradient = this.ctx.createRadialGradient(x, y, 0, x, y, star.size * 3);
-                    glowGradient.addColorStop(0, star.color + brightness + ')');
-                    glowGradient.addColorStop(1, star.color.replace(')', ', 0)'));
+                    glowGradient.addColorStop(0, `rgba(255, 255, 255, ${brightness * 0.5})`);
+                    glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
                     
                     this.ctx.fillStyle = glowGradient;
                     this.ctx.beginPath();
