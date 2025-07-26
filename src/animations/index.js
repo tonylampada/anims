@@ -9,6 +9,7 @@ import MandalaAnimation from './mandala/index.js';
 import BubbleTubeAnimation from './bubble-tube/index.js';
 import SpiralGalaxyAnimation from './spiral-galaxy/index.js';
 import FlowingSandAnimation from './flowing-sand/index.js';
+import FiberOpticAnimation from './fiber-optic/index.js';
 
 export const animations = [
     ParticlesAnimation,
@@ -20,7 +21,8 @@ export const animations = [
     MandalaAnimation,
     BubbleTubeAnimation,
     SpiralGalaxyAnimation,
-    FlowingSandAnimation
+    FlowingSandAnimation,
+    FiberOpticAnimation
 ];
 
 // Para facilitar adicionar novas animações no futuro
