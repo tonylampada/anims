@@ -54,9 +54,15 @@ export default class CyberpunkWormhole extends Animation {
     }
     
     draw(ctx) {
-        // Clear with dark background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        // Clear with dark background for trailing effect
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
         ctx.fillRect(0, 0, this.width, this.height);
+        
+        // On first frame, ensure we have a clean black background
+        if (this.time < 0.1) {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, this.width, this.height);
+        }
         
         ctx.save();
         ctx.translate(this.centerX, this.centerY);
@@ -89,22 +95,23 @@ export default class CyberpunkWormhole extends Animation {
             // Color based on depth with gradient effect
             const colorIndex = Math.floor((seg / this.segments) * this.colors.length + this.time) % this.colors.length;
             const color = this.colors[colorIndex];
-            const alpha = perspective * 0.8;
+            const alpha = perspective;
             
-            ctx.strokeStyle = color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
-            ctx.lineWidth = 2 * perspective;
-            ctx.stroke();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3 * perspective;
+            ctx.globalAlpha = alpha;
             
             // Add glow effect
-            ctx.shadowBlur = 20 * perspective;
+            ctx.shadowBlur = 30 * perspective;
             ctx.shadowColor = color;
             ctx.stroke();
             ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
         }
         
         // Draw grid lines through the wormhole
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
         
         this.gridLines.forEach(line => {
             ctx.beginPath();
