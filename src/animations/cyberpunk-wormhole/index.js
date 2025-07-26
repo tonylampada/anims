@@ -4,14 +4,15 @@ export default class CyberpunkWormhole extends Animation {
     constructor() {
         super();
         this.time = 0;
-        this.lastTime = 0;
+        this.speed = 0.02;
         
-        // Wormhole parameters
-        this.segments = 32; // Number of rings
-        this.sides = 24; // Sides per ring
-        this.segmentDepth = 15; // Depth between segments
+        // Tunnel structure
+        this.tunnelSegments = [];
+        this.segmentCount = 50;
+        this.segmentSpacing = 20;
+        this.tunnelRadius = 200;
         
-        // Color palette - cyberpunk blues, purples, and greens
+        // Colors for cyberpunk theme
         this.colors = [
             '#00ffff', // Cyan
             '#ff00ff', // Magenta
@@ -19,20 +20,15 @@ export default class CyberpunkWormhole extends Animation {
             '#8a2be2', // Blue violet
             '#4169e1', // Royal blue
             '#9370db', // Medium purple
-            '#32cd32', // Lime green
-            '#1e90ff', // Dodger blue
         ];
-        
-        // Grid lines for cyberpunk effect
-        this.gridLines = [];
     }
     
     init(canvas) {
         super.init(canvas);
         this.centerX = this.canvas.width / 2;
         this.centerY = this.canvas.height / 2;
-        this.maxRadius = Math.min(this.canvas.width, this.canvas.height) * 0.45;
-        this.generateGridLines();
+        this.tunnelRadius = Math.min(this.canvas.width, this.canvas.height) * 0.35;
+        this.generateTunnel();
     }
     
     resize() {
@@ -40,36 +36,38 @@ export default class CyberpunkWormhole extends Animation {
         if (this.canvas) {
             this.centerX = this.canvas.width / 2;
             this.centerY = this.canvas.height / 2;
-            this.maxRadius = Math.min(this.canvas.width, this.canvas.height) * 0.45;
+            this.tunnelRadius = Math.min(this.canvas.width, this.canvas.height) * 0.35;
         }
     }
     
-    generateGridLines() {
-        // Generate radial grid lines that will travel through the wormhole
-        for (let i = 0; i < 12; i++) {
-            this.gridLines.push({
-                angle: (Math.PI * 2 * i) / 12,
-                offset: Math.random() * this.segmentDepth,
-                speed: 0.5 + Math.random() * 0.5
+    generateTunnel() {
+        this.tunnelSegments = [];
+        for (let i = 0; i < this.segmentCount; i++) {
+            this.tunnelSegments.push({
+                z: i * this.segmentSpacing,
+                rotation: Math.random() * Math.PI * 2,
+                colorIndex: Math.floor(Math.random() * this.colors.length)
             });
         }
     }
     
     update() {
-        // Calculate delta time manually since base class doesn't provide it
-        const currentTime = performance.now();
-        const deltaTime = this.lastTime ? currentTime - this.lastTime : 16;
-        this.lastTime = currentTime;
+        this.time += this.speed;
         
-        this.time += deltaTime * 0.001;
-        
-        // Update grid lines
-        this.gridLines.forEach(line => {
-            line.offset += line.speed;
-            if (line.offset > this.segmentDepth) {
-                line.offset = 0;
+        // Move segments towards viewer
+        this.tunnelSegments.forEach(segment => {
+            segment.z -= this.speed * 100;
+            
+            // Reset segment when it passes the viewer
+            if (segment.z < -100) {
+                segment.z = (this.segmentCount - 1) * this.segmentSpacing;
+                segment.rotation = Math.random() * Math.PI * 2;
+                segment.colorIndex = Math.floor(Math.random() * this.colors.length);
             }
         });
+        
+        // Sort segments by z distance for proper rendering
+        this.tunnelSegments.sort((a, b) => b.z - a.z);
     }
     
     draw() {
@@ -77,30 +75,31 @@ export default class CyberpunkWormhole extends Animation {
         
         const ctx = this.ctx;
         
-        // Clear with dark background for trailing effect
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.92)';
+        // Clear canvas with black
+        ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         ctx.save();
         ctx.translate(this.centerX, this.centerY);
         
-        // Draw wormhole segments from back to front
-        for (let seg = this.segments; seg >= 0; seg--) {
-            const segmentRatio = seg / this.segments;
-            const z = seg * this.segmentDepth;
-            const perspective = 300 / (300 + z);
-            const radius = this.maxRadius * perspective;
+        // Draw tunnel segments from back to front
+        this.tunnelSegments.forEach(segment => {
+            const perspective = 300 / (300 + segment.z);
+            const radius = this.tunnelRadius * perspective;
             
-            // Oscillating distortion for organic feel
-            const distortion = Math.sin(this.time * 2 + seg * 0.3) * 0.1;
+            // Skip segments too close or too far
+            if (perspective <= 0 || perspective > 2) return;
             
-            // Draw the ring
+            // Number of sides for the tunnel (octagon)
+            const sides = 8;
+            
+            // Draw the tunnel segment
             ctx.beginPath();
-            for (let i = 0; i <= this.sides; i++) {
-                const angle = (Math.PI * 2 * i) / this.sides + this.time * 0.5;
-                const wobble = Math.sin(angle * 3 + this.time * 3 + seg * 0.2) * radius * distortion;
-                const x = Math.cos(angle) * (radius + wobble);
-                const y = Math.sin(angle) * (radius + wobble);
+            
+            for (let i = 0; i <= sides; i++) {
+                const angle = (i / sides) * Math.PI * 2 + segment.rotation + this.time * 0.5;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
                 
                 if (i === 0) {
                     ctx.moveTo(x, y);
@@ -109,80 +108,63 @@ export default class CyberpunkWormhole extends Animation {
                 }
             }
             
-            // Color based on depth with gradient effect
-            const colorIndex = Math.floor((seg / this.segments) * this.colors.length + this.time) % this.colors.length;
-            const color = this.colors[colorIndex];
-            const alpha = perspective;
-            
+            // Set color with transparency based on distance
+            const color = this.colors[segment.colorIndex];
             ctx.strokeStyle = color;
             ctx.lineWidth = 3 * perspective;
-            ctx.globalAlpha = alpha;
+            ctx.globalAlpha = perspective * 0.8;
             
             // Add glow effect
-            ctx.shadowBlur = 30 * perspective;
+            ctx.shadowBlur = 20 * perspective;
             ctx.shadowColor = color;
             ctx.stroke();
-            ctx.shadowBlur = 0;
-            ctx.globalAlpha = 1;
-        }
-        
-        // Draw grid lines through the wormhole
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
-        ctx.lineWidth = 2;
-        
-        this.gridLines.forEach(line => {
-            ctx.beginPath();
             
-            for (let seg = 0; seg <= this.segments; seg++) {
-                const z = seg * this.segmentDepth - line.offset;
-                if (z < 0) continue;
+            // Draw connecting lines to next segment for tunnel walls
+            const nextSegmentIndex = this.tunnelSegments.findIndex(s => s.z > segment.z);
+            if (nextSegmentIndex !== -1) {
+                const nextSegment = this.tunnelSegments[nextSegmentIndex];
+                const nextPerspective = 300 / (300 + nextSegment.z);
+                const nextRadius = this.tunnelRadius * nextPerspective;
                 
-                const perspective = 300 / (300 + z);
-                const radius = this.maxRadius * perspective * 0.9;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1 * perspective;
+                ctx.globalAlpha = perspective * 0.3;
                 
-                const x = Math.cos(line.angle) * radius;
-                const y = Math.sin(line.angle) * radius;
-                
-                if (seg === 0 || z < 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
+                // Draw lines connecting the segments
+                for (let i = 0; i < sides; i++) {
+                    const angle1 = (i / sides) * Math.PI * 2 + segment.rotation + this.time * 0.5;
+                    const angle2 = (i / sides) * Math.PI * 2 + nextSegment.rotation + this.time * 0.5;
+                    
+                    const x1 = Math.cos(angle1) * radius;
+                    const y1 = Math.sin(angle1) * radius;
+                    const x2 = Math.cos(angle2) * nextRadius;
+                    const y2 = Math.sin(angle2) * nextRadius;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
                 }
             }
-            
-            ctx.stroke();
         });
         
-        // Draw center darkness for depth
-        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.maxRadius * 0.8);
-        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        // Draw center vortex effect
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.tunnelRadius * 0.5);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
         gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.3)');
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         
+        ctx.globalAlpha = 1;
         ctx.fillStyle = gradient;
         ctx.fillRect(-this.canvas.width/2, -this.canvas.height/2, this.canvas.width, this.canvas.height);
         
-        // Add some particles for extra effect
-        const particleCount = 5;
-        for (let i = 0; i < particleCount; i++) {
-            const particleTime = (this.time * 2 + i * 0.7) % 1;
-            const z = particleTime * this.segments * this.segmentDepth;
-            const perspective = 300 / (300 + z);
-            const angle = i * Math.PI * 2 / particleCount + this.time;
-            const radius = this.maxRadius * perspective * (0.2 + particleTime * 0.6);
-            
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            
-            ctx.beginPath();
-            ctx.arc(x, y, 3 * perspective, 0, Math.PI * 2);
-            const pColor = this.colors[Math.floor(Math.random() * this.colors.length)];
-            ctx.fillStyle = pColor;
-            ctx.globalAlpha = 1 - particleTime;
-            ctx.fill();
-        }
+        // Add motion blur effect
+        ctx.globalAlpha = 0.1;
+        ctx.fillStyle = 'black';
+        ctx.fillRect(-this.canvas.width/2, -this.canvas.height/2, this.canvas.width, this.canvas.height);
         
         ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
         ctx.restore();
     }
     
