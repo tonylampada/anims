@@ -6,6 +6,7 @@ import KaleidoscopeAnimation from './kaleidoscope/index.js';
 import OceanWavesAnimation from './ocean-waves/index.js';
 import AuroraAnimation from './aurora/index.js';
 import MandalaAnimation from './mandala/index.js';
+import BubbleTubeAnimation from './bubble-tube/index.js';
 
 export const animations = [
     ParticlesAnimation,
@@ -14,7 +15,8 @@ export const animations = [
     KaleidoscopeAnimation,
     OceanWavesAnimation,
     AuroraAnimation,
-    MandalaAnimation
+    MandalaAnimation,
+    BubbleTubeAnimation
 ];
 
 // Para facilitar adicionar novas animações no futuro
