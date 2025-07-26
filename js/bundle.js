@@ -1107,6 +1107,9 @@
                     frequency: 0.003,
                     speed: 0.15,
                     thickness: 120,
+                    verticalSpeed: 0.0002,
+                    verticalRange: 0.15,
+                    verticalPhase: 0,
                     colors: [
                         { r: 0, g: 255, b: 100, opacity: 0.15 },
                         { r: 0, g: 200, b: 150, opacity: 0.2 },
@@ -1119,6 +1122,9 @@
                     frequency: 0.004,
                     speed: 0.2,
                     thickness: 100,
+                    verticalSpeed: 0.00015,
+                    verticalRange: 0.2,
+                    verticalPhase: Math.PI / 3,
                     colors: [
                         { r: 100, g: 100, b: 255, opacity: 0.12 },
                         { r: 150, g: 50, b: 255, opacity: 0.15 },
@@ -1131,6 +1137,9 @@
                     frequency: 0.002,
                     speed: 0.1,
                     thickness: 150,
+                    verticalSpeed: 0.00025,
+                    verticalRange: 0.1,
+                    verticalPhase: Math.PI * 2 / 3,
                     colors: [
                         { r: 0, g: 255, b: 150, opacity: 0.1 },
                         { r: 100, g: 255, b: 100, opacity: 0.12 },
@@ -1224,6 +1233,8 @@
             // Update aurora waves
             this.auroras.forEach(aurora => {
                 aurora.currentPhase = aurora.phase + this.time * aurora.speed;
+                aurora.currentVerticalPhase = (aurora.currentVerticalPhase || aurora.verticalPhase) + aurora.verticalSpeed;
+                aurora.currentY = aurora.baseY + Math.sin(aurora.currentVerticalPhase) * aurora.verticalRange;
             });
         }
 
@@ -1406,7 +1417,7 @@
                 
                 for (let i = 0; i <= segments; i++) {
                     const x = (i / segments) * width;
-                    const baseY = height * aurora.baseY;
+                    const baseY = height * (aurora.currentY || aurora.baseY);
                     
                     // Multiple wave functions for natural movement
                     const wave1 = Math.sin(x * aurora.frequency + aurora.currentPhase + phaseOffset) * aurora.amplitude * amplitudeModifier;
@@ -1432,7 +1443,7 @@
                 // Draw back down for the thickness
                 for (let i = segments; i >= 0; i--) {
                     const x = (i / segments) * width;
-                    const baseY = height * aurora.baseY;
+                    const baseY = height * (aurora.currentY || aurora.baseY);
                     
                     const wave1 = Math.sin(x * aurora.frequency + aurora.currentPhase + phaseOffset) * aurora.amplitude * amplitudeModifier;
                     const wave2 = Math.sin(x * aurora.frequency * 1.7 + aurora.currentPhase * 0.7 + phaseOffset + Math.PI/3) * aurora.amplitude * 0.3 * amplitudeModifier;
