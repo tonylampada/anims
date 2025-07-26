@@ -3,12 +3,14 @@ import ParticlesAnimation from './particles/index.js';
 import SpaceTunnelAnimation from './space-tunnel/index.js';
 import LavaLampAnimation from './lava-lamp/index.js';
 import KaleidoscopeAnimation from './kaleidoscope/index.js';
+import OceanWavesAnimation from './ocean-waves/index.js';
 
 export const animations = [
     ParticlesAnimation,
     SpaceTunnelAnimation,
     LavaLampAnimation,
-    KaleidoscopeAnimation
+    KaleidoscopeAnimation,
+    OceanWavesAnimation
 ];
 
 // Para facilitar adicionar novas animações no futuro
