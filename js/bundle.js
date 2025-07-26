@@ -2149,8 +2149,8 @@
         }
 
         update() {
-            // Slow rotation
-            this.rotation += 0.0005;
+            // Rotation speed - visible but still majestic
+            this.rotation += 0.002;
             
             // Pulse the core glow
             this.coreGlow.pulsePhase += 0.02;
