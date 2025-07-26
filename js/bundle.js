@@ -1998,23 +1998,23 @@
     class SpiralGalaxyAnimation extends Animation {
         constructor() {
             super();
-            this.rotation = 0;
-            this.stars = [];
-            this.nebulaClouds = [];
-            this.coreGlow = {
-                radius: 80,
-                intensity: 1,
-                pulsePhase: 0
-            };
-            this.spiralArms = 5;
-            this.starCount = 2000;
-            this.nebulaCount = 50;
+            this.particles = [];
+            this.centerX = 0;
+            this.centerY = 0;
+            this.time = 0;
+            
+            // Galaxy parameters
+            this.numArms = 5;
+            this.armSpread = 0.5;
+            this.rotationSpeed = 0.001;
+            this.particleCount = 3000;
+            this.centralMass = 50000;
         }
 
         get metadata() {
             return {
                 title: 'Spiral Galaxy',
-                description: 'Majestic spiral galaxy slowly spinning through space',
+                description: 'Dynamic spiral galaxy with particles falling into the center',
                 author: 'Sistema',
                 date: new Date().toISOString()
             };
@@ -2022,296 +2022,219 @@
 
         init(canvas) {
             super.init(canvas);
-            this.createStars();
-            this.createNebulaClouds();
+            this.centerX = canvas.width / 2;
+            this.centerY = canvas.height / 2;
+            this.createParticles();
         }
 
-        createStars() {
-            this.stars = [];
-            const centerX = this.canvas.width / 2;
-            const centerY = this.canvas.height / 2;
-            const maxRadius = Math.min(centerX, centerY) * 0.8;
-
-            for (let i = 0; i < this.starCount; i++) {
-                // Use spiral distribution
-                const t = Math.random() * 10; // parameter along spiral
-                const armIndex = Math.floor(Math.random() * this.spiralArms);
-                const armAngle = (armIndex * 2 * Math.PI) / this.spiralArms;
+        createParticles() {
+            this.particles = [];
+            const maxRadius = Math.min(this.centerX, this.centerY) * 0.9;
+            
+            for (let i = 0; i < this.particleCount; i++) {
+                // Distribute particles in spiral arms
+                const armIndex = Math.floor(Math.random() * this.numArms);
+                const armAngle = (armIndex * 2 * Math.PI) / this.numArms;
                 
-                // Logarithmic spiral equation
-                const a = 20; // controls tightness
-                const b = 0.3; // controls growth rate
-                const r = a * Math.exp(b * t);
+                // Distance from center with bias towards outer regions
+                const distance = Math.sqrt(Math.random()) * maxRadius;
                 
-                // Add some randomness for spread
-                const spread = Math.random() * 30 - 15;
-                const angle = armAngle + t * 0.5 + (spread / r) * 0.5;
+                // Add spread to the arm
+                const spread = (Math.random() - 0.5) * this.armSpread;
+                const angle = armAngle + distance * 0.01 + spread;
                 
-                // Convert to cartesian coordinates
-                const x = centerX + r * Math.cos(angle);
-                const y = centerY + r * Math.sin(angle);
+                // Initial position
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
                 
-                // Only add stars within bounds
-                if (r < maxRadius) {
-                    this.stars.push({
-                        x: x,
-                        y: y,
-                        baseX: r * Math.cos(angle),
-                        baseY: r * Math.sin(angle),
-                        size: Math.random() * 2 + 0.5,
-                        brightness: Math.random(),
-                        twinkleSpeed: Math.random() * 0.05 + 0.01,
-                        twinklePhase: Math.random() * Math.PI * 2,
-                        color: this.getStarColor(),
-                        inCore: r < 50
-                    });
-                }
-            }
-
-            // Add extra stars in the core
-            for (let i = 0; i < 500; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const r = Math.random() * 50;
-                const x = centerX + r * Math.cos(angle);
-                const y = centerY + r * Math.sin(angle);
+                // Calculate orbital velocity for stable orbit
+                const orbitalVelocity = Math.sqrt(this.centralMass / (distance + 1));
+                const velocityAngle = angle + Math.PI / 2; // Perpendicular to radius
                 
-                this.stars.push({
+                // Add some randomness to velocity for variety
+                const velocityVariation = 0.8 + Math.random() * 0.4;
+                
+                this.particles.push({
                     x: x,
                     y: y,
-                    baseX: x - centerX,
-                    baseY: y - centerY,
+                    vx: Math.cos(velocityAngle) * orbitalVelocity * velocityVariation,
+                    vy: Math.sin(velocityAngle) * orbitalVelocity * velocityVariation,
+                    size: Math.random() * 2 + 0.5,
+                    brightness: Math.random() * 0.8 + 0.2,
+                    color: this.getParticleColor(distance, maxRadius),
+                    trail: []
+                });
+            }
+            
+            // Add central core particles
+            for (let i = 0; i < 200; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 30;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                
+                const orbitalVelocity = Math.sqrt(this.centralMass / (distance + 10));
+                const velocityAngle = angle + Math.PI / 2;
+                
+                this.particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(velocityAngle) * orbitalVelocity,
+                    vy: Math.sin(velocityAngle) * orbitalVelocity,
                     size: Math.random() * 1.5 + 0.5,
-                    brightness: Math.random() * 0.5 + 0.5,
-                    twinkleSpeed: Math.random() * 0.03 + 0.01,
-                    twinklePhase: Math.random() * Math.PI * 2,
+                    brightness: 1,
                     color: '#ffffff',
-                    inCore: true
+                    trail: []
                 });
             }
         }
 
-        getStarColor() {
-            const colors = [
-                '#ffffff', // white
-                '#ffe9c4', // yellow-white
-                '#ffd2a1', // orange-white
-                '#ffcccc', // red-white
-                '#ccccff', // blue-white
-                '#aaccff'  // bright blue-white
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        createNebulaClouds() {
-            this.nebulaClouds = [];
-            const centerX = this.canvas.width / 2;
-            const centerY = this.canvas.height / 2;
-
-            for (let i = 0; i < this.nebulaCount; i++) {
-                const armIndex = Math.floor(Math.random() * this.spiralArms);
-                const armAngle = (armIndex * 2 * Math.PI) / this.spiralArms;
-                const t = Math.random() * 8 + 1;
-                
-                const a = 30;
-                const b = 0.3;
-                const r = a * Math.exp(b * t);
-                const angle = armAngle + t * 0.5 + (Math.random() - 0.5) * 0.5;
-                
-                this.nebulaClouds.push({
-                    x: centerX + r * Math.cos(angle),
-                    y: centerY + r * Math.sin(angle),
-                    baseX: r * Math.cos(angle),
-                    baseY: r * Math.sin(angle),
-                    radius: Math.random() * 60 + 30,
-                    color: this.getNebulaColor(),
-                    opacity: Math.random() * 0.3 + 0.1,
-                    rotation: Math.random() * Math.PI * 2
-                });
+        getParticleColor(distance, maxRadius) {
+            const ratio = distance / maxRadius;
+            
+            if (ratio < 0.3) {
+                // Inner region - white/yellow
+                return ['#ffffff', '#fffacd', '#ffffe0'][Math.floor(Math.random() * 3)];
+            } else if (ratio < 0.6) {
+                // Mid region - blue/white
+                return ['#ffffff', '#e6e6fa', '#b0c4de', '#87ceeb'][Math.floor(Math.random() * 4)];
+            } else {
+                // Outer region - blue/purple
+                return ['#6495ed', '#7b68ee', '#9370db', '#8a2be2'][Math.floor(Math.random() * 4)];
             }
-        }
-
-        getNebulaColor() {
-            const colors = [
-                'rgba(138, 43, 226, ', // blue violet
-                'rgba(75, 0, 130, ',   // indigo
-                'rgba(255, 20, 147, ', // deep pink
-                'rgba(255, 140, 0, ',  // dark orange
-                'rgba(0, 191, 255, ',  // deep sky blue
-                'rgba(148, 0, 211, '   // dark violet
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
         }
 
         resize() {
             super.resize();
-            this.createStars();
-            this.createNebulaClouds();
+            this.centerX = this.canvas.width / 2;
+            this.centerY = this.canvas.height / 2;
         }
 
         update() {
-            // Rotation speed - visible but still majestic
-            this.rotation += 0.05; // Much faster for debugging
+            this.time++;
             
-            // Debug: Show rotation value every 60 frames
-            if (!this.frameCount) this.frameCount = 0;
-            this.frameCount++;
-            if (this.frameCount % 60 === 0) {
-                console.log('Spiral Galaxy rotation:', this.rotation);
-            }
-            
-            // Pulse the core glow
-            this.coreGlow.pulsePhase += 0.02;
-            this.coreGlow.intensity = 0.8 + Math.sin(this.coreGlow.pulsePhase) * 0.2;
-            
-            // Update star twinkle
-            this.stars.forEach(star => {
-                star.twinklePhase += star.twinkleSpeed;
+            this.particles.forEach(particle => {
+                // Calculate distance from center
+                const dx = particle.x;
+                const dy = particle.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0.1) {
+                    // Gravitational acceleration towards center
+                    const force = this.centralMass / (distance * distance);
+                    const ax = -(dx / distance) * force;
+                    const ay = -(dy / distance) * force;
+                    
+                    // Update velocity
+                    particle.vx += ax * 0.01;
+                    particle.vy += ay * 0.01;
+                    
+                    // Add some drag for spiral effect
+                    particle.vx *= 0.999;
+                    particle.vy *= 0.999;
+                }
+                
+                // Update position
+                particle.x += particle.vx * 0.1;
+                particle.y += particle.vy * 0.1;
+                
+                // Store trail positions
+                particle.trail.push({ x: particle.x, y: particle.y });
+                if (particle.trail.length > 10) {
+                    particle.trail.shift();
+                }
+                
+                // Respawn particles that fall into the center or go too far
+                if (distance < 5 || distance > Math.min(this.centerX, this.centerY)) {
+                    // Respawn at outer edge
+                    const armIndex = Math.floor(Math.random() * this.numArms);
+                    const armAngle = (armIndex * 2 * Math.PI) / this.numArms;
+                    const maxRadius = Math.min(this.centerX, this.centerY) * 0.9;
+                    const newDistance = maxRadius * (0.7 + Math.random() * 0.3);
+                    const spread = (Math.random() - 0.5) * this.armSpread;
+                    const angle = armAngle + newDistance * 0.01 + spread;
+                    
+                    particle.x = Math.cos(angle) * newDistance;
+                    particle.y = Math.sin(angle) * newDistance;
+                    
+                    const orbitalVelocity = Math.sqrt(this.centralMass / newDistance);
+                    const velocityAngle = angle + Math.PI / 2;
+                    particle.vx = Math.cos(velocityAngle) * orbitalVelocity * (0.8 + Math.random() * 0.4);
+                    particle.vy = Math.sin(velocityAngle) * orbitalVelocity * (0.8 + Math.random() * 0.4);
+                    particle.trail = [];
+                }
             });
         }
 
         draw() {
             // Dark space background
-            this.ctx.fillStyle = '#000814';
+            this.ctx.fillStyle = 'rgba(0, 8, 20, 0.1)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             
-            const centerX = this.canvas.width / 2;
-            const centerY = this.canvas.height / 2;
-            
-            // Debug: Draw rotation indicator
             this.ctx.save();
-            this.ctx.strokeStyle = '#ff0000';
-            this.ctx.lineWidth = 3;
-            this.ctx.translate(centerX, centerY);
-            this.ctx.rotate(this.rotation);
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, 0);
-            this.ctx.lineTo(100, 0);
-            this.ctx.stroke();
-            this.ctx.restore();
+            this.ctx.translate(this.centerX, this.centerY);
             
-            // Debug: Show if update is being called
-            this.ctx.fillStyle = '#00ff00';
-            this.ctx.font = '20px Arial';
-            this.ctx.fillText(`Rotation: ${this.rotation.toFixed(2)}`, 10, 30);
-            this.ctx.fillText(`Core Pulse: ${this.coreGlow.pulsePhase.toFixed(2)}`, 10, 60);
+            // Draw central black hole/bright core
+            this.drawCore();
             
-            // Save context for rotation
-            this.ctx.save();
-            this.ctx.translate(centerX, centerY);
-            this.ctx.rotate(this.rotation);
-            
-            // Draw nebula clouds
-            this.drawNebulae(centerX, centerY);
-            
-            // Draw galaxy core glow
-            this.drawCoreGlow(0, 0);
-            
-            // Draw stars
-            this.drawStars(centerX, centerY);
-            
-            // Draw bright central core
-            this.drawCore(0, 0);
-            
-            this.ctx.restore();
-        }
-
-        drawNebulae(centerX, centerY) {
-            this.nebulaClouds.forEach(cloud => {
-                const x = cloud.baseX;
-                const y = cloud.baseY;
-                
-                // Create radial gradient for nebula
-                const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, cloud.radius);
-                gradient.addColorStop(0, cloud.color + cloud.opacity + ')');
-                gradient.addColorStop(0.5, cloud.color + (cloud.opacity * 0.5) + ')');
-                gradient.addColorStop(1, cloud.color + '0)');
-                
-                this.ctx.fillStyle = gradient;
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, cloud.radius, 0, Math.PI * 2);
-                this.ctx.fill();
-            });
-        }
-
-        drawCoreGlow(centerX, centerY) {
-            // Multiple layers of glow for depth
-            const glowLayers = [
-                { radius: 200, opacity: 0.1 },
-                { radius: 150, opacity: 0.15 },
-                { radius: 100, opacity: 0.2 },
-                { radius: 70, opacity: 0.3 }
-            ];
-            
-            glowLayers.forEach(layer => {
-                const gradient = this.ctx.createRadialGradient(
-                    centerX, centerY, 0,
-                    centerX, centerY, layer.radius * this.coreGlow.intensity
-                );
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${layer.opacity})`);
-                gradient.addColorStop(0.3, `rgba(255, 248, 220, ${layer.opacity * 0.8})`);
-                gradient.addColorStop(0.6, `rgba(255, 228, 181, ${layer.opacity * 0.5})`);
-                gradient.addColorStop(1, 'rgba(255, 200, 150, 0)');
-                
-                this.ctx.fillStyle = gradient;
-                this.ctx.beginPath();
-                this.ctx.arc(centerX, centerY, layer.radius * this.coreGlow.intensity, 0, Math.PI * 2);
-                this.ctx.fill();
-            });
-        }
-
-        drawStars(centerX, centerY) {
-            this.stars.forEach(star => {
-                const x = star.baseX;
-                const y = star.baseY;
-                
-                // Calculate twinkle effect
-                const twinkle = 0.5 + Math.sin(star.twinklePhase) * 0.5;
-                const brightness = star.brightness * twinkle;
-                
-                // Draw star with glow
-                if (star.size > 1.5) {
-                    // Larger stars get a subtle glow
-                    const glowGradient = this.ctx.createRadialGradient(x, y, 0, x, y, star.size * 3);
-                    glowGradient.addColorStop(0, `rgba(255, 255, 255, ${brightness * 0.5})`);
-                    glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                    
-                    this.ctx.fillStyle = glowGradient;
+            // Draw particles
+            this.particles.forEach(particle => {
+                // Draw trail
+                if (particle.trail.length > 1) {
+                    this.ctx.strokeStyle = particle.color;
+                    this.ctx.globalAlpha = particle.brightness * 0.3;
+                    this.ctx.lineWidth = particle.size * 0.5;
                     this.ctx.beginPath();
-                    this.ctx.arc(x, y, star.size * 3, 0, Math.PI * 2);
-                    this.ctx.fill();
+                    particle.trail.forEach((point, index) => {
+                        if (index === 0) {
+                            this.ctx.moveTo(point.x, point.y);
+                        } else {
+                            this.ctx.lineTo(point.x, point.y);
+                        }
+                    });
+                    this.ctx.stroke();
                 }
                 
-                // Draw the star itself
-                this.ctx.fillStyle = star.color;
-                this.ctx.globalAlpha = brightness;
+                // Draw particle
+                this.ctx.globalAlpha = particle.brightness;
+                this.ctx.fillStyle = particle.color;
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, star.size, 0, Math.PI * 2);
+                this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
                 this.ctx.fill();
-                this.ctx.globalAlpha = 1;
             });
+            
+            this.ctx.globalAlpha = 1;
+            this.ctx.restore();
         }
 
-        drawCore(centerX, centerY) {
-            // Bright central core
-            const coreGradient = this.ctx.createRadialGradient(
-                centerX, centerY, 0,
-                centerX, centerY, 30
-            );
-            coreGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            coreGradient.addColorStop(0.2, 'rgba(255, 248, 220, 0.9)');
-            coreGradient.addColorStop(0.5, 'rgba(255, 228, 181, 0.7)');
-            coreGradient.addColorStop(1, 'rgba(255, 200, 150, 0.4)');
+        drawCore() {
+            // Multiple layers for depth
+            const layers = [
+                { radius: 50, color: 'rgba(50, 0, 100, 0.5)' },
+                { radius: 30, color: 'rgba(100, 50, 200, 0.7)' },
+                { radius: 20, color: 'rgba(200, 150, 255, 0.9)' },
+                { radius: 10, color: 'rgba(255, 255, 255, 1)' }
+            ];
             
-            this.ctx.fillStyle = coreGradient;
-            this.ctx.beginPath();
-            this.ctx.arc(centerX, centerY, 30 * this.coreGlow.intensity, 0, Math.PI * 2);
-            this.ctx.fill();
+            layers.forEach(layer => {
+                const gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, layer.radius);
+                gradient.addColorStop(0, layer.color);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, layer.radius, 0, Math.PI * 2);
+                this.ctx.fill();
+            });
             
-            // Extra bright center point
+            // Bright center
             this.ctx.fillStyle = '#ffffff';
+            this.ctx.shadowBlur = 20;
+            this.ctx.shadowColor = '#ffffff';
             this.ctx.beginPath();
-            this.ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
+            this.ctx.arc(0, 0, 3, 0, Math.PI * 2);
             this.ctx.fill();
+            this.ctx.shadowBlur = 0;
         }
     }
 
