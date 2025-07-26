@@ -290,14 +290,20 @@
             const particleCount = 100;
             
             for (let i = 0; i < particleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 300 + 100;
                 this.nebulaParticles.push({
-                    x: this.centerX + (Math.random() - 0.5) * 400,
-                    y: this.centerY + (Math.random() - 0.5) * 400,
-                    vx: (Math.random() - 0.5) * 0.5,
-                    vy: (Math.random() - 0.5) * 0.5,
+                    baseX: this.centerX + Math.cos(angle) * distance,
+                    baseY: this.centerY + Math.sin(angle) * distance,
+                    x: 0,
+                    y: 0,
+                    offsetAngle: Math.random() * Math.PI * 2,
+                    offsetRadius: Math.random() * 100 + 50,
+                    speed: Math.random() * 0.5 + 0.1,
                     size: Math.random() * 80 + 20,
                     hue: 180 + Math.random() * 60, // Azul para verde
-                    alpha: Math.random() * 0.3
+                    alpha: Math.random() * 0.3,
+                    phase: Math.random() * Math.PI * 2
                 });
             }
         }
@@ -325,25 +331,30 @@
             
             // Atualizar nebulosa
             this.nebulaParticles.forEach(particle => {
-                particle.x += particle.vx;
-                particle.y += particle.vy;
+                // Movimento elíptico ao redor do ponto base
+                particle.phase += particle.speed * 0.01;
                 
-                // Movimento orgânico
-                particle.vx += (Math.random() - 0.5) * 0.02;
-                particle.vy += (Math.random() - 0.5) * 0.02;
+                // Deformação da elipse ao longo do tempo
+                const ellipseWidth = particle.offsetRadius * (1 + Math.sin(this.time * 0.3 + particle.phase) * 0.3);
+                const ellipseHeight = particle.offsetRadius * 0.6 * (1 + Math.cos(this.time * 0.2 + particle.phase) * 0.2);
                 
-                // Limitar velocidade
-                particle.vx *= 0.99;
-                particle.vy *= 0.99;
+                // Rotação da elipse
+                const rotation = this.time * 0.1 + particle.offsetAngle;
                 
-                // Manter próximo ao centro
-                const dx = this.centerX - particle.x;
-                const dy = this.centerY - particle.y;
-                particle.vx += dx * 0.0001;
-                particle.vy += dy * 0.0001;
+                // Calcular posição na elipse
+                const localX = Math.cos(particle.phase) * ellipseWidth;
+                const localY = Math.sin(particle.phase) * ellipseHeight;
+                
+                // Aplicar rotação
+                particle.x = particle.baseX + localX * Math.cos(rotation) - localY * Math.sin(rotation);
+                particle.y = particle.baseY + localX * Math.sin(rotation) + localY * Math.cos(rotation);
+                
+                // Movimento ondulante da base
+                particle.baseX += Math.sin(this.time * 0.5 + particle.phase) * 0.3;
+                particle.baseY += Math.cos(this.time * 0.4 + particle.phase * 1.2) * 0.3;
                 
                 // Variação suave de transparência
-                particle.alpha = 0.15 + Math.sin(this.time + particle.x * 0.01) * 0.1;
+                particle.alpha = 0.15 + Math.sin(this.time + particle.phase) * 0.1;
             });
         }
 
