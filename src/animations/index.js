@@ -10,6 +10,7 @@ import BubbleTubeAnimation from './bubble-tube/index.js';
 import SpiralGalaxyAnimation from './spiral-galaxy/index.js';
 import FlowingSandAnimation from './flowing-sand/index.js';
 import FiberOpticAnimation from './fiber-optic/index.js';
+import BreathingCircleAnimation from './breathing-circle/index.js';
 
 export const animations = [
     ParticlesAnimation,
@@ -22,7 +23,8 @@ export const animations = [
     BubbleTubeAnimation,
     SpiralGalaxyAnimation,
     FlowingSandAnimation,
-    FiberOpticAnimation
+    FiberOpticAnimation,
+    BreathingCircleAnimation
 ];
 
 // Para facilitar adicionar novas animações no futuro
