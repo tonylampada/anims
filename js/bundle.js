@@ -2189,6 +2189,12 @@
             this.ctx.stroke();
             this.ctx.restore();
             
+            // Debug: Show if update is being called
+            this.ctx.fillStyle = '#00ff00';
+            this.ctx.font = '20px Arial';
+            this.ctx.fillText(`Rotation: ${this.rotation.toFixed(2)}`, 10, 30);
+            this.ctx.fillText(`Core Pulse: ${this.coreGlow.pulsePhase.toFixed(2)}`, 10, 60);
+            
             // Save context for rotation
             this.ctx.save();
             this.ctx.translate(centerX, centerY);
