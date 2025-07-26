@@ -3049,17 +3049,14 @@
     }
 
     class CyberpunkWormhole extends Animation {
-        constructor(canvas) {
-            super(canvas);
-            this.centerX = this.width / 2;
-            this.centerY = this.height / 2;
+        constructor() {
+            super();
             this.time = 0;
             
             // Wormhole parameters
             this.segments = 32; // Number of rings
             this.sides = 24; // Sides per ring
             this.segmentDepth = 15; // Depth between segments
-            this.maxRadius = Math.min(this.width, this.height) * 0.45;
             
             // Color palette - cyberpunk blues, purples, and greens
             this.colors = [
@@ -3075,7 +3072,23 @@
             
             // Grid lines for cyberpunk effect
             this.gridLines = [];
+        }
+        
+        init(canvas) {
+            super.init(canvas);
+            this.centerX = this.canvas.width / 2;
+            this.centerY = this.canvas.height / 2;
+            this.maxRadius = Math.min(this.canvas.width, this.canvas.height) * 0.45;
             this.generateGridLines();
+        }
+        
+        resize() {
+            super.resize();
+            if (this.canvas) {
+                this.centerX = this.canvas.width / 2;
+                this.centerY = this.canvas.height / 2;
+                this.maxRadius = Math.min(this.canvas.width, this.canvas.height) * 0.45;
+            }
         }
         
         generateGridLines() {
@@ -3101,15 +3114,17 @@
             });
         }
         
-        draw(ctx) {
+        draw() {
+            const ctx = this.ctx;
+            
             // Clear with dark background for trailing effect
             ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-            ctx.fillRect(0, 0, this.width, this.height);
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             
             // On first frame, ensure we have a clean black background
             if (this.time < 0.1) {
                 ctx.fillStyle = 'black';
-                ctx.fillRect(0, 0, this.width, this.height);
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             }
             
             ctx.save();
@@ -3191,7 +3206,7 @@
             gradient.addColorStop(1, 'rgba(0, 255, 255, 0.3)');
             
             ctx.fillStyle = gradient;
-            ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+            ctx.fillRect(-this.canvas.width/2, -this.canvas.height/2, this.canvas.width, this.canvas.height);
             
             // Add some particles for extra effect
             const particleCount = 5;
