@@ -1096,7 +1096,8 @@
             this.stars = [];
             this.shootingStars = [];
             this.lastShootingStarTime = 0;
-            this.nextShootingStarDelay = 15 + Math.random() * 10; // 15-25 seconds
+            this.nextShootingStarDelay = 15000 + Math.random() * 10000; // 15-25 seconds in milliseconds
+            this.elapsedTime = 0;
             
             // Aurora configurations
             this.auroraConfigs = [
@@ -1193,6 +1194,7 @@
 
         update() {
             this.time += 0.016;
+            this.elapsedTime += 16; // milliseconds per frame at 60fps
 
             // Update star twinkle and pulse
             this.stars.forEach(star => {
@@ -1201,10 +1203,10 @@
             });
 
             // Check if it's time for a new shooting star
-            if (this.time - this.lastShootingStarTime > this.nextShootingStarDelay) {
+            if (this.elapsedTime - this.lastShootingStarTime > this.nextShootingStarDelay) {
                 this.createShootingStar();
-                this.lastShootingStarTime = this.time;
-                this.nextShootingStarDelay = 15 + Math.random() * 10; // 15-25 seconds
+                this.lastShootingStarTime = this.elapsedTime;
+                this.nextShootingStarDelay = 15000 + Math.random() * 10000; // 15-25 seconds in milliseconds
             }
 
             // Update shooting stars
@@ -1286,6 +1288,41 @@
                         star.size * 6,
                         star.size * 6
                     );
+                }
+                
+                // Add sparkle cross effect when star is bright
+                if (brightness > 0.7 && star.size > 1) {
+                    const sparkleLength = star.size * 8 * (brightness - 0.7) / 0.3;
+                    const sparkleWidth = 1;
+                    
+                    this.ctx.save();
+                    this.ctx.translate(star.x, star.y);
+                    
+                    // Create gradient for sparkle
+                    const sparkleGradient = this.ctx.createLinearGradient(-sparkleLength, 0, sparkleLength, 0);
+                    sparkleGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                    sparkleGradient.addColorStop(0.4, `rgba(255, 255, 255, ${(brightness - 0.7) * 0.5})`);
+                    sparkleGradient.addColorStop(0.5, `rgba(255, 255, 255, ${(brightness - 0.7) * 0.8})`);
+                    sparkleGradient.addColorStop(0.6, `rgba(255, 255, 255, ${(brightness - 0.7) * 0.5})`);
+                    sparkleGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    
+                    this.ctx.strokeStyle = sparkleGradient;
+                    this.ctx.lineWidth = sparkleWidth;
+                    
+                    // Horizontal sparkle
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(-sparkleLength, 0);
+                    this.ctx.lineTo(sparkleLength, 0);
+                    this.ctx.stroke();
+                    
+                    // Vertical sparkle
+                    this.ctx.rotate(Math.PI / 2);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(-sparkleLength, 0);
+                    this.ctx.lineTo(sparkleLength, 0);
+                    this.ctx.stroke();
+                    
+                    this.ctx.restore();
                 }
             });
         }
