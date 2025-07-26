@@ -5,6 +5,7 @@ import LavaLampAnimation from './lava-lamp/index.js';
 import KaleidoscopeAnimation from './kaleidoscope/index.js';
 import OceanWavesAnimation from './ocean-waves/index.js';
 import AuroraAnimation from './aurora/index.js';
+import MandalaAnimation from './mandala/index.js';
 
 export const animations = [
     ParticlesAnimation,
@@ -12,7 +13,8 @@ export const animations = [
     LavaLampAnimation,
     KaleidoscopeAnimation,
     OceanWavesAnimation,
-    AuroraAnimation
+    AuroraAnimation,
+    MandalaAnimation
 ];
 
 // Para facilitar adicionar novas animações no futuro
