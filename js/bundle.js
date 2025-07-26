@@ -617,16 +617,16 @@
             this.centerY = 0;
             this.radius = 0;
             
-            // Soft pastel colors for therapeutic effect
-            this.pastelColors = [
-                { r: 255, g: 182, b: 193 }, // Light pink
-                { r: 230, g: 230, b: 250 }, // Lavender
-                { r: 176, g: 224, b: 230 }, // Powder blue
-                { r: 152, g: 251, b: 152 }, // Pale green
-                { r: 255, g: 218, b: 185 }, // Peach
-                { r: 221, g: 160, b: 221 }, // Plum
-                { r: 255, g: 250, b: 205 }, // Lemon chiffon
-                { r: 175, g: 238, b: 238 }  // Pale turquoise
+            // Dark blues and greens for right brain stimulation
+            this.darkColors = [
+                { r: 0, g: 48, b: 64 },     // Deep teal
+                { r: 0, g: 64, b: 83 },     // Dark cyan
+                { r: 0, g: 89, b: 124 },    // Ocean blue
+                { r: 0, g: 109, b: 91 },    // Forest green
+                { r: 21, g: 71, b: 52 },    // Dark emerald
+                { r: 22, g: 48, b: 70 },    // Midnight blue
+                { r: 0, g: 77, b: 64 },     // Pine green
+                { r: 25, g: 42, b: 86 }     // Navy
             ];
             
             this.colorPhase = 0;
@@ -671,8 +671,8 @@
                     orbitSpeed: 0.0005 + Math.random() * 0.001, // Gentle orbital movement
                     phase: Math.random() * Math.PI * 2,
                     shapeType: Math.floor(Math.random() * 3), // 0: circle, 1: triangle, 2: hexagon
-                    colorIndex: Math.floor(Math.random() * this.pastelColors.length),
-                    opacity: 0.3 + Math.random() * 0.4,
+                    colorIndex: Math.floor(Math.random() * this.darkColors.length),
+                    opacity: 0.6 + Math.random() * 0.3,
                     pulseSpeed: 0.002 + Math.random() * 0.003,
                     pulseAmount: 0.1 + Math.random() * 0.1
                 });
@@ -764,8 +764,8 @@
         getInterpolatedColor(baseIndex) {
             // Smooth color interpolation between adjacent colors
             const t = (Math.sin(this.colorPhase) + 1) / 2; // Normalize to 0-1
-            const color1 = this.pastelColors[baseIndex];
-            const color2 = this.pastelColors[(baseIndex + 1) % this.pastelColors.length];
+            const color1 = this.darkColors[baseIndex];
+            const color2 = this.darkColors[(baseIndex + 1) % this.darkColors.length];
             
             return {
                 r: Math.round(color1.r + (color2.r - color1.r) * t),
@@ -775,13 +775,13 @@
         }
 
         draw() {
-            // Gentle gradient background
+            // Dark gradient background
             const bgGradient = this.ctx.createRadialGradient(
                 this.centerX, this.centerY, 0,
                 this.centerX, this.centerY, this.radius
             );
-            bgGradient.addColorStop(0, 'rgb(250, 250, 255)'); // Very light blue-white
-            bgGradient.addColorStop(1, 'rgb(240, 240, 250)'); // Soft lavender-white
+            bgGradient.addColorStop(0, 'rgb(15, 25, 35)'); // Dark blue-black
+            bgGradient.addColorStop(1, 'rgb(5, 15, 25)'); // Almost black with blue tint
             
             this.ctx.fillStyle = bgGradient;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -840,9 +840,9 @@
                 this.centerX, this.centerY, 0,
                 this.centerX, this.centerY, 30
             );
-            centerGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-            centerGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
-            centerGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            centerGradient.addColorStop(0, 'rgba(0, 89, 124, 0.8)');
+            centerGradient.addColorStop(0.5, 'rgba(0, 89, 124, 0.3)');
+            centerGradient.addColorStop(1, 'rgba(0, 89, 124, 0)');
             
             this.ctx.fillStyle = centerGradient;
             this.ctx.beginPath();
@@ -854,8 +854,8 @@
                 this.centerX, this.centerY, this.radius * 0.7,
                 this.centerX, this.centerY, this.radius
             );
-            vignette.addColorStop(0, 'rgba(255, 255, 255, 0)');
-            vignette.addColorStop(1, 'rgba(240, 240, 250, 0.3)');
+            vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
             
             this.ctx.fillStyle = vignette;
             this.ctx.beginPath();
