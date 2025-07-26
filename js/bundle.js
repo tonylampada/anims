@@ -1998,26 +1998,16 @@
     class SpiralGalaxyAnimation extends Animation {
         constructor() {
             super();
-            this.stars = [];
-            this.dust = [];
+            this.particles = [];
+            this.time = 0;
             this.centerX = 0;
             this.centerY = 0;
-            this.time = 0;
-            
-            // Galaxy parameters
-            this.numArms = 2;
-            this.armWindTightness = 0.5;
-            this.starCount = 5000;
-            this.dustCount = 1000;
-            this.galaxyRadius = 300;
-            this.coreRadius = 50;
-            this.rotationFactor = 0.0002;
         }
 
         get metadata() {
             return {
                 title: 'Spiral Galaxy',
-                description: 'Realistic spiral galaxy with differential rotation',
+                description: 'Beautiful rotating spiral galaxy',
                 author: 'Sistema',
                 date: new Date().toISOString()
             };
@@ -2027,127 +2017,93 @@
             super.init(canvas);
             this.centerX = canvas.width / 2;
             this.centerY = canvas.height / 2;
-            this.galaxyRadius = Math.min(this.centerX, this.centerY) * 0.8;
-            this.coreRadius = this.galaxyRadius * 0.15;
-            this.createGalaxy();
+            this.createParticles();
         }
 
-        createGalaxy() {
-            this.stars = [];
-            this.dust = [];
+        createParticles() {
+            this.particles = [];
+            const numArms = 3;
+            const particlesPerArm = 500;
+            const maxRadius = Math.min(this.centerX, this.centerY) * 0.9;
             
-            // Create core stars (bulge)
-            for (let i = 0; i < this.starCount * 0.3; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = this.randomGaussian() * this.coreRadius;
-                const z = this.randomGaussian() * 20; // vertical distribution
+            // Create spiral arms
+            for (let arm = 0; arm < numArms; arm++) {
+                const armAngle = (arm * 2 * Math.PI) / numArms;
                 
-                this.stars.push({
+                for (let i = 0; i < particlesPerArm; i++) {
+                    const progress = i / particlesPerArm;
+                    const radius = progress * maxRadius;
+                    
+                    // Spiral equation
+                    const angle = armAngle + progress * Math.PI * 4; // 2 full rotations
+                    
+                    // Add some randomness for natural look
+                    const spread = (Math.random() - 0.5) * 40 * (1 - progress * 0.5);
+                    const r = radius + spread;
+                    
+                    // Position
+                    const x = Math.cos(angle) * r;
+                    const y = Math.sin(angle) * r;
+                    
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        angle: Math.atan2(y, x),
+                        radius: Math.sqrt(x * x + y * y),
+                        size: Math.random() * 3 + 1,
+                        brightness: Math.random() * 0.5 + 0.5,
+                        speed: 0.001 + (1 - progress) * 0.002, // Inner particles rotate faster
+                        color: this.getStarColor(progress)
+                    });
+                }
+            }
+            
+            // Add central bulge
+            for (let i = 0; i < 300; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = Math.random() * 50;
+                const x = Math.cos(angle) * r;
+                const y = Math.sin(angle) * r;
+                
+                this.particles.push({
+                    x: x,
+                    y: y,
                     angle: angle,
-                    radius: Math.abs(radius),
-                    z: z,
-                    brightness: 0.5 + Math.random() * 0.5,
-                    size: Math.random() * 1.5 + 0.5,
-                    color: this.getCoreStarColor(),
-                    twinkle: Math.random() * Math.PI * 2
+                    radius: r,
+                    size: Math.random() * 2 + 1,
+                    brightness: 1,
+                    speed: 0.003,
+                    color: '#ffffdd'
                 });
             }
             
-            // Create spiral arm stars
-            for (let arm = 0; arm < this.numArms; arm++) {
-                const armAngle = (arm * 2 * Math.PI) / this.numArms;
+            // Add background stars
+            for (let i = 0; i < 500; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = 100 + Math.random() * (maxRadius - 100);
+                const x = Math.cos(angle) * r;
+                const y = Math.sin(angle) * r;
                 
-                for (let i = 0; i < (this.starCount * 0.7) / this.numArms; i++) {
-                    // Position along the arm
-                    const t = Math.random();
-                    const radius = t * this.galaxyRadius;
-                    
-                    // Logarithmic spiral
-                    const theta = armAngle + this.armWindTightness * Math.log(radius / 20 + 1);
-                    
-                    // Add spread to create arm width
-                    const spread = this.randomGaussian() * (20 + radius * 0.1);
-                    const perpAngle = theta + Math.PI / 2;
-                    const offsetX = Math.cos(perpAngle) * spread;
-                    const offsetY = Math.sin(perpAngle) * spread;
-                    
-                    // Convert to polar coordinates
-                    const x = Math.cos(theta) * radius + offsetX;
-                    const y = Math.sin(theta) * radius + offsetY;
-                    const finalRadius = Math.sqrt(x * x + y * y);
-                    const finalAngle = Math.atan2(y, x);
-                    
-                    // Vertical distribution (thinner disk at edges)
-                    const z = this.randomGaussian() * (5 + 10 * (1 - t));
-                    
-                    this.stars.push({
-                        angle: finalAngle,
-                        radius: finalRadius,
-                        z: z,
-                        brightness: 0.3 + Math.random() * 0.7,
-                        size: Math.random() * 2 + 0.5,
-                        color: this.getArmStarColor(t),
-                        twinkle: Math.random() * Math.PI * 2
-                    });
-                }
-            }
-            
-            // Create dust lanes
-            for (let arm = 0; arm < this.numArms; arm++) {
-                const armAngle = (arm * 2 * Math.PI) / this.numArms;
-                
-                for (let i = 0; i < this.dustCount / this.numArms; i++) {
-                    const t = 0.2 + Math.random() * 0.7; // Dust mainly in middle regions
-                    const radius = t * this.galaxyRadius;
-                    const theta = armAngle + this.armWindTightness * Math.log(radius / 20 + 1) - 0.2; // Slightly leading edge
-                    
-                    const spread = this.randomGaussian() * 30;
-                    const perpAngle = theta + Math.PI / 2;
-                    const offsetX = Math.cos(perpAngle) * spread;
-                    const offsetY = Math.sin(perpAngle) * spread;
-                    
-                    const x = Math.cos(theta) * radius + offsetX;
-                    const y = Math.sin(theta) * radius + offsetY;
-                    const finalRadius = Math.sqrt(x * x + y * y);
-                    const finalAngle = Math.atan2(y, x);
-                    
-                    this.dust.push({
-                        angle: finalAngle,
-                        radius: finalRadius,
-                        size: 20 + Math.random() * 40,
-                        opacity: 0.02 + Math.random() * 0.03
-                    });
-                }
+                this.particles.push({
+                    x: x,
+                    y: y,
+                    angle: angle,
+                    radius: r,
+                    size: Math.random() * 1.5 + 0.5,
+                    brightness: Math.random() * 0.3 + 0.2,
+                    speed: 0.0005,
+                    color: '#ffffff'
+                });
             }
         }
 
-        randomGaussian() {
-            // Box-Muller transform for gaussian distribution
-            const u = 1 - Math.random();
-            const v = Math.random();
-            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-        }
-
-        getCoreStarColor() {
-            const colors = [
-                '#ffffcc', // Yellowish
-                '#ffeeaa', // Yellow-white
-                '#ffddbb', // Orange-white
-                '#ffffff'  // White
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        getArmStarColor(position) {
-            if (position < 0.3) {
-                // Inner arms - yellower stars
-                return ['#ffffcc', '#ffeeaa', '#ffffff'][Math.floor(Math.random() * 3)];
-            } else if (position < 0.7) {
-                // Middle - mixed population
-                return ['#ffffff', '#eeeeff', '#ddddff', '#ffeeaa'][Math.floor(Math.random() * 4)];
+        getStarColor(progress) {
+            if (progress < 0.3) {
+                return '#ffffdd'; // Yellowish center
+            } else if (progress < 0.6) {
+                return '#ffffff'; // White middle
             } else {
-                // Outer arms - bluer, younger stars
-                return ['#ddddff', '#ccccff', '#bbbbff', '#aaaaff'][Math.floor(Math.random() * 4)];
+                return '#aaccff'; // Bluish outer
             }
         }
 
@@ -2155,107 +2111,93 @@
             super.resize();
             this.centerX = this.canvas.width / 2;
             this.centerY = this.canvas.height / 2;
-            this.galaxyRadius = Math.min(this.centerX, this.centerY) * 0.8;
-            this.coreRadius = this.galaxyRadius * 0.15;
-            this.createGalaxy();
+            this.createParticles();
         }
 
         update() {
-            this.time++;
+            this.time += 1;
             
-            // Update star twinkle
-            this.stars.forEach(star => {
-                star.twinkle += 0.05;
+            // Update particle positions
+            this.particles.forEach(particle => {
+                particle.angle += particle.speed;
+                particle.x = Math.cos(particle.angle) * particle.radius;
+                particle.y = Math.sin(particle.angle) * particle.radius;
             });
         }
 
         draw() {
-            // Black space background
-            this.ctx.fillStyle = '#000';
+            // Dark background with subtle blue tint
+            this.ctx.fillStyle = '#000511';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             
-            // Sort by z-order (back to front)
-            const allObjects = [...this.stars];
-            allObjects.sort((a, b) => (a.z || 0) - (b.z || 0));
-            
-            // Draw dust first (behind stars)
-            this.dust.forEach(cloud => {
-                const rotation = this.time * this.rotationFactor / (1 + cloud.radius / this.galaxyRadius);
-                const x = this.centerX + Math.cos(cloud.angle + rotation) * cloud.radius;
-                const y = this.centerY + Math.sin(cloud.angle + rotation) * cloud.radius;
-                
-                const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, cloud.size);
-                gradient.addColorStop(0, `rgba(50, 30, 20, ${cloud.opacity})`);
-                gradient.addColorStop(1, 'rgba(50, 30, 20, 0)');
-                
-                this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(x - cloud.size, y - cloud.size, cloud.size * 2, cloud.size * 2);
-            });
-            
-            // Draw galaxy glow
-            const galaxyGlow = this.ctx.createRadialGradient(
+            // Draw galactic halo
+            const haloGradient = this.ctx.createRadialGradient(
                 this.centerX, this.centerY, 0,
-                this.centerX, this.centerY, this.galaxyRadius
+                this.centerX, this.centerY, Math.min(this.centerX, this.centerY) * 0.8
             );
-            galaxyGlow.addColorStop(0, 'rgba(255, 240, 200, 0.05)');
-            galaxyGlow.addColorStop(0.1, 'rgba(255, 230, 180, 0.03)');
-            galaxyGlow.addColorStop(0.3, 'rgba(200, 180, 255, 0.02)');
-            galaxyGlow.addColorStop(0.6, 'rgba(150, 150, 255, 0.01)');
-            galaxyGlow.addColorStop(1, 'rgba(100, 100, 200, 0)');
+            haloGradient.addColorStop(0, 'rgba(100, 80, 120, 0.1)');
+            haloGradient.addColorStop(0.5, 'rgba(60, 40, 100, 0.05)');
+            haloGradient.addColorStop(1, 'rgba(20, 10, 50, 0)');
             
-            this.ctx.fillStyle = galaxyGlow;
+            this.ctx.fillStyle = haloGradient;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             
-            // Draw stars
-            allObjects.forEach(star => {
-                // Differential rotation - inner stars rotate faster
-                const rotationSpeed = this.rotationFactor / (1 + star.radius / this.galaxyRadius * 2);
-                const rotation = this.time * rotationSpeed;
+            // Draw particles
+            this.particles.forEach(particle => {
+                const x = this.centerX + particle.x;
+                const y = this.centerY + particle.y;
                 
-                const x = this.centerX + Math.cos(star.angle + rotation) * star.radius;
-                const y = this.centerY + Math.sin(star.angle + rotation) * star.radius;
-                
-                // Foreshortening based on z position
-                const perspective = 1 - Math.abs(star.z) / 100;
-                const adjustedY = y + star.z * perspective * 0.3;
-                
-                // Twinkle effect
-                const twinkle = 0.7 + Math.sin(star.twinkle) * 0.3;
-                const brightness = star.brightness * twinkle * perspective;
-                
-                // Draw star
-                this.ctx.globalAlpha = brightness;
-                this.ctx.fillStyle = star.color;
-                this.ctx.beginPath();
-                this.ctx.arc(x, adjustedY, star.size * perspective, 0, Math.PI * 2);
-                this.ctx.fill();
-                
-                // Add glow for bright stars
-                if (star.size > 1 && brightness > 0.5) {
-                    const gradient = this.ctx.createRadialGradient(x, adjustedY, 0, x, adjustedY, star.size * 3);
-                    gradient.addColorStop(0, `${star.color}88`);
-                    gradient.addColorStop(1, `${star.color}00`);
-                    this.ctx.fillStyle = gradient;
-                    this.ctx.fillRect(x - star.size * 3, adjustedY - star.size * 3, star.size * 6, star.size * 6);
+                // Glow effect
+                if (particle.size > 1.5) {
+                    const glowGradient = this.ctx.createRadialGradient(
+                        x, y, 0,
+                        x, y, particle.size * 4
+                    );
+                    glowGradient.addColorStop(0, particle.color + '40');
+                    glowGradient.addColorStop(1, particle.color + '00');
+                    
+                    this.ctx.fillStyle = glowGradient;
+                    this.ctx.fillRect(
+                        x - particle.size * 4,
+                        y - particle.size * 4,
+                        particle.size * 8,
+                        particle.size * 8
+                    );
                 }
+                
+                // Star itself
+                this.ctx.fillStyle = particle.color;
+                this.ctx.globalAlpha = particle.brightness;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, particle.size, 0, Math.PI * 2);
+                this.ctx.fill();
             });
             
             this.ctx.globalAlpha = 1;
             
-            // Draw bright galactic core
+            // Bright galactic core
             const coreGradient = this.ctx.createRadialGradient(
                 this.centerX, this.centerY, 0,
-                this.centerX, this.centerY, this.coreRadius
+                this.centerX, this.centerY, 60
             );
-            coreGradient.addColorStop(0, 'rgba(255, 255, 230, 0.3)');
-            coreGradient.addColorStop(0.2, 'rgba(255, 245, 200, 0.1)');
-            coreGradient.addColorStop(0.5, 'rgba(255, 230, 180, 0.05)');
+            coreGradient.addColorStop(0, 'rgba(255, 255, 240, 0.8)');
+            coreGradient.addColorStop(0.2, 'rgba(255, 240, 200, 0.4)');
+            coreGradient.addColorStop(0.5, 'rgba(255, 220, 180, 0.2)');
             coreGradient.addColorStop(1, 'rgba(255, 200, 150, 0)');
             
             this.ctx.fillStyle = coreGradient;
             this.ctx.beginPath();
-            this.ctx.arc(this.centerX, this.centerY, this.coreRadius, 0, Math.PI * 2);
+            this.ctx.arc(this.centerX, this.centerY, 60, 0, Math.PI * 2);
             this.ctx.fill();
+            
+            // Very bright center
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.shadowBlur = 30;
+            this.ctx.shadowColor = '#ffffff';
+            this.ctx.beginPath();
+            this.ctx.arc(this.centerX, this.centerY, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.shadowBlur = 0;
         }
     }
 
