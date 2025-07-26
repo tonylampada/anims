@@ -67,6 +67,8 @@ export default class CyberpunkWormhole extends Animation {
     }
     
     draw() {
+        if (!this.ctx || !this.canvas) return;
+        
         const ctx = this.ctx;
         
         // Clear with dark background for trailing effect
