@@ -61,8 +61,8 @@ export default class SpiralGalaxyAnimation extends Animation {
                 this.stars.push({
                     x: x,
                     y: y,
-                    baseX: x - centerX,
-                    baseY: y - centerY,
+                    baseX: r * Math.cos(angle),
+                    baseY: r * Math.sin(angle),
                     size: Math.random() * 2 + 0.5,
                     brightness: Math.random(),
                     twinkleSpeed: Math.random() * 0.05 + 0.01,
@@ -155,7 +155,7 @@ export default class SpiralGalaxyAnimation extends Animation {
 
     update() {
         // Rotation speed - visible but still majestic
-        this.rotation += 0.002;
+        this.rotation += 0.01; // Increased temporarily for testing
         
         // Pulse the core glow
         this.coreGlow.pulsePhase += 0.02;
@@ -179,27 +179,26 @@ export default class SpiralGalaxyAnimation extends Animation {
         this.ctx.save();
         this.ctx.translate(centerX, centerY);
         this.ctx.rotate(this.rotation);
-        this.ctx.translate(-centerX, -centerY);
         
         // Draw nebula clouds
         this.drawNebulae(centerX, centerY);
         
         // Draw galaxy core glow
-        this.drawCoreGlow(centerX, centerY);
+        this.drawCoreGlow(0, 0);
         
         // Draw stars
         this.drawStars(centerX, centerY);
         
         // Draw bright central core
-        this.drawCore(centerX, centerY);
+        this.drawCore(0, 0);
         
         this.ctx.restore();
     }
 
     drawNebulae(centerX, centerY) {
         this.nebulaClouds.forEach(cloud => {
-            const x = centerX + cloud.baseX;
-            const y = centerY + cloud.baseY;
+            const x = cloud.baseX;
+            const y = cloud.baseY;
             
             // Create radial gradient for nebula
             const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, cloud.radius);
@@ -242,8 +241,8 @@ export default class SpiralGalaxyAnimation extends Animation {
 
     drawStars(centerX, centerY) {
         this.stars.forEach(star => {
-            const x = centerX + star.baseX;
-            const y = centerY + star.baseY;
+            const x = star.baseX;
+            const y = star.baseY;
             
             // Calculate twinkle effect
             const twinkle = 0.5 + Math.sin(star.twinklePhase) * 0.5;
