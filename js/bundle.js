@@ -1094,6 +1094,9 @@
             this.time = 0;
             this.auroras = [];
             this.stars = [];
+            this.shootingStars = [];
+            this.lastShootingStarTime = 0;
+            this.nextShootingStarDelay = 15 + Math.random() * 10; // 15-25 seconds
             
             // Aurora configurations
             this.auroraConfigs = [
@@ -1161,8 +1164,11 @@
                     y: Math.random() * this.canvas.height,
                     size: Math.random() * 1.5 + 0.5,
                     brightness: Math.random() * 0.5 + 0.5,
-                    twinkleSpeed: Math.random() * 0.02 + 0.01,
-                    twinklePhase: Math.random() * Math.PI * 2
+                    baseBrightness: Math.random() * 0.5 + 0.5,
+                    twinkleSpeed: Math.random() * 0.03 + 0.02,
+                    twinklePhase: Math.random() * Math.PI * 2,
+                    pulseSpeed: Math.random() * 0.01 + 0.005,
+                    pulsePhase: Math.random() * Math.PI * 2
                 });
             }
         }
@@ -1188,9 +1194,29 @@
         update() {
             this.time += 0.016;
 
-            // Update star twinkle
+            // Update star twinkle and pulse
             this.stars.forEach(star => {
                 star.twinklePhase += star.twinkleSpeed;
+                star.pulsePhase += star.pulseSpeed;
+            });
+
+            // Check if it's time for a new shooting star
+            if (this.time - this.lastShootingStarTime > this.nextShootingStarDelay) {
+                this.createShootingStar();
+                this.lastShootingStarTime = this.time;
+                this.nextShootingStarDelay = 15 + Math.random() * 10; // 15-25 seconds
+            }
+
+            // Update shooting stars
+            this.shootingStars = this.shootingStars.filter(star => {
+                star.x += star.velocityX;
+                star.y += star.velocityY;
+                star.life -= 0.02;
+                
+                // Remove if out of bounds or faded
+                return star.life > 0 && 
+                       star.x > -50 && star.x < this.canvas.width + 50 &&
+                       star.y > -50 && star.y < this.canvas.height + 50;
             });
 
             // Update aurora waves
@@ -1199,10 +1225,46 @@
             });
         }
 
+        createShootingStar() {
+            const startSide = Math.random();
+            let x, y, angle;
+            
+            if (startSide < 0.25) { // Top
+                x = Math.random() * this.canvas.width;
+                y = -20;
+                angle = Math.PI / 4 + Math.random() * Math.PI / 2;
+            } else if (startSide < 0.5) { // Right
+                x = this.canvas.width + 20;
+                y = Math.random() * this.canvas.height * 0.5;
+                angle = Math.PI * 0.75 + Math.random() * Math.PI / 2;
+            } else if (startSide < 0.75) { // Left
+                x = -20;
+                y = Math.random() * this.canvas.height * 0.5;
+                angle = -Math.PI / 4 + Math.random() * Math.PI / 2;
+            } else { // Upper diagonal
+                x = Math.random() * this.canvas.width * 0.3;
+                y = -20;
+                angle = Math.PI / 3 + Math.random() * Math.PI / 3;
+            }
+            
+            const speed = 8 + Math.random() * 4;
+            
+            this.shootingStars.push({
+                x: x,
+                y: y,
+                velocityX: Math.cos(angle) * speed,
+                velocityY: Math.sin(angle) * speed,
+                length: 30 + Math.random() * 20,
+                life: 1,
+                brightness: 0.8 + Math.random() * 0.2
+            });
+        }
+
         drawStars() {
             this.stars.forEach(star => {
-                const twinkle = Math.sin(star.twinklePhase) * 0.3 + 0.7;
-                const brightness = star.brightness * twinkle;
+                const twinkle = Math.sin(star.twinklePhase) * 0.5 + 0.5;
+                const pulse = Math.sin(star.pulsePhase) * 0.2 + 0.8;
+                const brightness = star.baseBrightness * twinkle * pulse;
                 
                 this.ctx.beginPath();
                 this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
@@ -1225,6 +1287,63 @@
                         star.size * 6
                     );
                 }
+            });
+        }
+
+        drawShootingStars() {
+            this.shootingStars.forEach(star => {
+                const tailLength = star.length * star.life;
+                
+                // Create gradient for the shooting star trail
+                const gradient = this.ctx.createLinearGradient(
+                    star.x - star.velocityX * tailLength / 8,
+                    star.y - star.velocityY * tailLength / 8,
+                    star.x,
+                    star.y
+                );
+                
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                gradient.addColorStop(0.7, `rgba(255, 255, 255, ${star.brightness * star.life * 0.3})`);
+                gradient.addColorStop(1, `rgba(255, 255, 255, ${star.brightness * star.life})`);
+                
+                // Draw the trail
+                this.ctx.save();
+                this.ctx.strokeStyle = gradient;
+                this.ctx.lineWidth = 2 * star.life;
+                this.ctx.lineCap = 'round';
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(
+                    star.x - star.velocityX * tailLength / 8,
+                    star.y - star.velocityY * tailLength / 8
+                );
+                this.ctx.lineTo(star.x, star.y);
+                this.ctx.stroke();
+                
+                // Draw the bright head
+                this.ctx.beginPath();
+                this.ctx.arc(star.x, star.y, 2 * star.life, 0, Math.PI * 2);
+                this.ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness * star.life})`;
+                this.ctx.fill();
+                
+                // Add glow
+                const glowGradient = this.ctx.createRadialGradient(
+                    star.x, star.y, 0,
+                    star.x, star.y, 10 * star.life
+                );
+                glowGradient.addColorStop(0, `rgba(255, 255, 255, ${star.brightness * star.life * 0.5})`);
+                glowGradient.addColorStop(0.5, `rgba(200, 200, 255, ${star.brightness * star.life * 0.2})`);
+                glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                
+                this.ctx.fillStyle = glowGradient;
+                this.ctx.fillRect(
+                    star.x - 10 * star.life,
+                    star.y - 10 * star.life,
+                    20 * star.life,
+                    20 * star.life
+                );
+                
+                this.ctx.restore();
             });
         }
 
@@ -1326,6 +1445,9 @@
             
             // Draw stars
             this.drawStars();
+            
+            // Draw shooting stars
+            this.drawShootingStars();
             
             // Draw auroras
             this.auroras.forEach(aurora => {
