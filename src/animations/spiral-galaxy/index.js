@@ -155,7 +155,14 @@ export default class SpiralGalaxyAnimation extends Animation {
 
     update() {
         // Rotation speed - visible but still majestic
-        this.rotation += 0.01; // Increased temporarily for testing
+        this.rotation += 0.05; // Much faster for debugging
+        
+        // Debug: Show rotation value every 60 frames
+        if (!this.frameCount) this.frameCount = 0;
+        this.frameCount++;
+        if (this.frameCount % 60 === 0) {
+            console.log('Spiral Galaxy rotation:', this.rotation);
+        }
         
         // Pulse the core glow
         this.coreGlow.pulsePhase += 0.02;
@@ -174,6 +181,18 @@ export default class SpiralGalaxyAnimation extends Animation {
         
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
+        
+        // Debug: Draw rotation indicator
+        this.ctx.save();
+        this.ctx.strokeStyle = '#ff0000';
+        this.ctx.lineWidth = 3;
+        this.ctx.translate(centerX, centerY);
+        this.ctx.rotate(this.rotation);
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, 0);
+        this.ctx.lineTo(100, 0);
+        this.ctx.stroke();
+        this.ctx.restore();
         
         // Save context for rotation
         this.ctx.save();
