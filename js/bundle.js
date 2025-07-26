@@ -27,7 +27,30 @@
                 if (e.key === 'ArrowRight') this.nextAnimation();
             });
             
-            this.loadAnimation(0);
+            // Check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const animationParam = urlParams.get('animation');
+            
+            if (animationParam) {
+                // Try to find animation by number or name
+                const animationNumber = parseInt(animationParam);
+                if (!isNaN(animationNumber) && animationNumber > 0 && animationNumber <= this.animations.length) {
+                    this.loadAnimation(animationNumber - 1); // Convert to 0-based index
+                } else {
+                    // Try to find by name (case insensitive)
+                    const index = this.animations.findIndex(AnimClass => {
+                        const anim = new AnimClass();
+                        return anim.metadata.title.toLowerCase().includes(animationParam.toLowerCase());
+                    });
+                    if (index !== -1) {
+                        this.loadAnimation(index);
+                    } else {
+                        this.loadAnimation(0); // Default to first
+                    }
+                }
+            } else {
+                this.loadAnimation(0);
+            }
         }
         
         loadAnimation(index) {
