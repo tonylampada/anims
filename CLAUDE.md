@@ -4,44 +4,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an interactive animation gallery hosted on GitHub Pages at https://tonylampada.github.io/anims/. The project showcases HTML5 Canvas animations with a modular architecture for easy expansion.
+Interactive animation gallery hosted on GitHub Pages at https://tonylampada.github.io/anims/. The project uses HTML5 Canvas animations with a modular ES6 architecture bundled by Rollup.
 
 ## Development Commands
 
-Since this is a vanilla JavaScript project without a build process:
-- **Run locally**: `python3 -m http.server 8000` (then access http://localhost:8000)
-- **Deploy**: Push to `main` branch triggers automatic GitHub Pages deployment
+```bash
+npm install          # Install dependencies
+npm run build        # Build production bundle
+npm run dev          # Build with watch mode
+npm run serve        # Start local server on port 8000
+```
+
+Deploy by pushing to `main` branch - GitHub Actions automatically builds and deploys.
 
 ## Architecture
 
-### Current Implementation
-The project uses `js/app.js` which contains all code in a single file to avoid ES6 module issues on GitHub Pages:
-- `Animation` base class - provides canvas management, resize handling, and animation loop
-- `ParticlesAnimation` - interactive particle system implementation
-- `AnimationGallery` - manages animation switching and UI updates
+### Build System
+- **Rollup** bundles ES6 modules from `src/` into `js/bundle.js`
+- Entry point: `src/main.js`
+- GitHub Actions runs build on every push
 
-### Animation System
-Each animation must:
-1. Extend the `Animation` base class
-2. Implement `update()` and `draw()` methods
-3. Override `metadata` getter to provide title/description
-4. Handle mouse/keyboard events if needed
-
-### Adding New Animations
-To add a new animation to the gallery:
-1. Add the animation class to `js/app.js`
-2. Add it to the `animations` array in `AnimationGallery` constructor
-3. The gallery will automatically handle navigation and display
-
-## GitHub Pages Deployment
-
-The site is automatically deployed when pushing to the `main` branch. Monitor deployment status with:
-```bash
-gh run list --limit 1
+### Code Structure
+```
+src/
+├── core/
+│   ├── Animation.js    # Base animation class
+│   └── Gallery.js      # Gallery controller
+├── animations/
+│   ├── index.js        # Animation registry
+│   ├── particles/      # Each animation in its folder
+│   └── space-tunnel/
+└── main.js             # Entry point
 ```
 
-## Important Notes
+### Animation Interface
+New animations must:
+1. Extend `Animation` class from `src/core/Animation.js`
+2. Implement `update()` and `draw()` methods
+3. Override `metadata` getter with title/description
+4. Export as default from their folder
 
-- Module imports must use absolute paths with `/anims/` prefix for GitHub Pages
-- Currently using a single-file approach (`app.js`) to avoid ES6 module compatibility issues
-- The modular architecture exists in `js/gallery.js` and `animations/` but isn't currently active due to module loading issues on GitHub Pages
+### Adding Animations
+1. Create folder in `src/animations/your-animation/`
+2. Create `index.js` extending Animation class
+3. Add to exports in `src/animations/index.js`
+4. Run `npm run build`
+
+## CI/CD
+
+GitHub Actions workflow (`.github/workflows/build.yml`):
+- Installs dependencies
+- Runs `npm run build`
+- Deploys to GitHub Pages
+
+Monitor with: `gh run list --limit 1`
