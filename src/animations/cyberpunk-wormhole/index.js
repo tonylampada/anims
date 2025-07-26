@@ -27,7 +27,7 @@ export default class CyberpunkWormhole extends Animation {
         super.init(canvas);
         this.centerX = this.canvas.width / 2;
         this.centerY = this.canvas.height / 2;
-        this.tunnelRadius = Math.min(this.canvas.width, this.canvas.height) * 0.35;
+        this.tunnelRadius = Math.min(this.canvas.width, this.canvas.height) * 0.25;
         this.generateTunnel();
     }
     
@@ -36,7 +36,7 @@ export default class CyberpunkWormhole extends Animation {
         if (this.canvas) {
             this.centerX = this.canvas.width / 2;
             this.centerY = this.canvas.height / 2;
-            this.tunnelRadius = Math.min(this.canvas.width, this.canvas.height) * 0.35;
+            this.tunnelRadius = Math.min(this.canvas.width, this.canvas.height) * 0.25;
         }
     }
     
@@ -58,8 +58,8 @@ export default class CyberpunkWormhole extends Animation {
         this.tunnelSegments.forEach(segment => {
             segment.z -= this.speed * 100;
             
-            // Reset segment when it passes the viewer
-            if (segment.z < -100) {
+            // Reset segment when it passes the viewer (much closer now)
+            if (segment.z < -500) {
                 segment.z = (this.segmentCount - 1) * this.segmentSpacing;
                 segment.rotation = Math.random() * Math.PI * 2;
                 segment.colorIndex = Math.floor(Math.random() * this.colors.length);
@@ -84,11 +84,14 @@ export default class CyberpunkWormhole extends Animation {
         
         // Draw tunnel segments from back to front
         this.tunnelSegments.forEach(segment => {
-            const perspective = 300 / (300 + segment.z);
+            const perspective = 400 / (400 + segment.z);
             const radius = this.tunnelRadius * perspective;
             
-            // Skip segments too close or too far
-            if (perspective <= 0 || perspective > 2) return;
+            // Skip segments too far away
+            if (perspective <= 0) return;
+            
+            // Don't draw if segment is too large (off screen)
+            if (radius > Math.max(this.canvas.width, this.canvas.height)) return;
             
             // Number of sides for the tunnel (octagon)
             const sides = 8;
@@ -123,7 +126,7 @@ export default class CyberpunkWormhole extends Animation {
             const nextSegmentIndex = this.tunnelSegments.findIndex(s => s.z > segment.z);
             if (nextSegmentIndex !== -1) {
                 const nextSegment = this.tunnelSegments[nextSegmentIndex];
-                const nextPerspective = 300 / (300 + nextSegment.z);
+                const nextPerspective = 400 / (400 + nextSegment.z);
                 const nextRadius = this.tunnelRadius * nextPerspective;
                 
                 ctx.strokeStyle = color;
