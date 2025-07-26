@@ -4,6 +4,7 @@ export default class CyberpunkWormhole extends Animation {
     constructor() {
         super();
         this.time = 0;
+        this.lastTime = 0;
         
         // Wormhole parameters
         this.segments = 32; // Number of rings
@@ -54,7 +55,12 @@ export default class CyberpunkWormhole extends Animation {
         }
     }
     
-    update(deltaTime) {
+    update() {
+        // Calculate delta time manually since base class doesn't provide it
+        const currentTime = performance.now();
+        const deltaTime = this.lastTime ? currentTime - this.lastTime : 16;
+        this.lastTime = currentTime;
+        
         this.time += deltaTime * 0.001;
         
         // Update grid lines
@@ -72,14 +78,8 @@ export default class CyberpunkWormhole extends Animation {
         const ctx = this.ctx;
         
         // Clear with dark background for trailing effect
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.92)';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // On first frame, ensure we have a clean black background
-        if (this.time < 0.1) {
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        }
         
         ctx.save();
         ctx.translate(this.centerX, this.centerY);
@@ -153,11 +153,11 @@ export default class CyberpunkWormhole extends Animation {
             ctx.stroke();
         });
         
-        // Draw entrance glow
-        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.maxRadius);
-        gradient.addColorStop(0, 'rgba(0, 255, 255, 0)');
-        gradient.addColorStop(0.7, 'rgba(0, 255, 255, 0)');
-        gradient.addColorStop(1, 'rgba(0, 255, 255, 0.3)');
+        // Draw center darkness for depth
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.maxRadius * 0.8);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.3)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         
         ctx.fillStyle = gradient;
         ctx.fillRect(-this.canvas.width/2, -this.canvas.height/2, this.canvas.width, this.canvas.height);
@@ -176,10 +176,13 @@ export default class CyberpunkWormhole extends Animation {
             
             ctx.beginPath();
             ctx.arc(x, y, 3 * perspective, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(0, 255, 255, ${1 - particleTime})`;
+            const pColor = this.colors[Math.floor(Math.random() * this.colors.length)];
+            ctx.fillStyle = pColor;
+            ctx.globalAlpha = 1 - particleTime;
             ctx.fill();
         }
         
+        ctx.globalAlpha = 1;
         ctx.restore();
     }
     
